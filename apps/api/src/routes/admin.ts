@@ -62,10 +62,10 @@ export const adminRoutes = new Elysia({ prefix: '/api/admin' })
     },
     {
       body: t.Object({
-        name: t.Optional(t.String()),
-        tagline: t.Optional(t.String()),
-        durationSec: t.Optional(t.Number()),
-        targetQrCount: t.Optional(t.Number()),
+        name: t.Optional(t.String({ maxLength: 40 })),
+        tagline: t.Optional(t.String({ maxLength: 60 })),
+        durationSec: t.Optional(t.Number({ minimum: 30, maximum: 24 * 3600 })),
+        targetQrCount: t.Optional(t.Number({ minimum: 1, maximum: 2000 })),
       }),
     },
   )
@@ -77,7 +77,7 @@ export const adminRoutes = new Elysia({ prefix: '/api/admin' })
       broadcastAll()
       return created
     },
-    { body: t.Object({ count: t.Number(), labelPrefix: t.Optional(t.String()) }) },
+    { body: t.Object({ count: t.Number({ minimum: 1, maximum: 500 }), labelPrefix: t.Optional(t.String({ maxLength: 40 })) }) },
   )
   .patch(
     '/qr/:id',
@@ -87,8 +87,11 @@ export const adminRoutes = new Elysia({ prefix: '/api/admin' })
       return listQrCodes()
     },
     {
-      params: t.Object({ id: t.Number() }),
-      body: t.Object({ label: t.Optional(t.String()), active: t.Optional(t.Boolean()) }),
+      params: t.Object({ id: t.Number({ minimum: 1 }) }),
+      body: t.Object({
+        label: t.Optional(t.String({ maxLength: 80 })),
+        active: t.Optional(t.Boolean()),
+      }),
     },
   )
   .delete(
@@ -98,7 +101,7 @@ export const adminRoutes = new Elysia({ prefix: '/api/admin' })
       broadcastAll()
       return listQrCodes()
     },
-    { params: t.Object({ id: t.Number() }) },
+    { params: t.Object({ id: t.Number({ minimum: 1 }) }) },
   )
   .delete('/qr', () => {
     deleteAllQrCodes()
@@ -119,5 +122,5 @@ export const adminRoutes = new Elysia({ prefix: '/api/admin' })
       broadcastAll()
       return listUsers()
     },
-    { params: t.Object({ id: t.Number() }) },
+    { params: t.Object({ id: t.Number({ minimum: 1 }) }) },
   )

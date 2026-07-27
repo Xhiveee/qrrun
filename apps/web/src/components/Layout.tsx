@@ -81,7 +81,6 @@ export function Layout({ connected }: { connected: boolean }) {
       <footer className="border-ink mt-16 border-t-2">
         <div className="text-ink-soft mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-[10px] font-bold tracking-[0.24em] uppercase">
           <span>QRUSH · Event Scanning Race</span>
-          <span>Bun · Elysia · React · SQLite</span>
         </div>
       </footer>
     </div>

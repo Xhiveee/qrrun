@@ -42,7 +42,7 @@ export const publicRoutes = new Elysia({ prefix: '/api' })
       broadcastAll()
       return { token: await jwt.sign({ sub: String(user.id) }), user: toPublicUser(user) }
     },
-    { body: t.Object({ username: t.String(), password: t.String() }) },
+    { body: t.Object({ username: t.String({ minLength: 2, maxLength: 24 }), password: t.String({ minLength: 6, maxLength: 128 }) }) },
   )
   .post(
     '/auth/login',
@@ -52,7 +52,7 @@ export const publicRoutes = new Elysia({ prefix: '/api' })
         throw new HttpError(401, 'Неверный ник или пароль')
       return { token: await jwt.sign({ sub: String(row.id) }), user: toPublicUser(row) }
     },
-    { body: t.Object({ username: t.String(), password: t.String() }) },
+    { body: t.Object({ username: t.String({ minLength: 2, maxLength: 24 }), password: t.String({ minLength: 6, maxLength: 128 }) }) },
   )
   .get('/me', ({ currentUser }): MeResponse => {
     const user = requireUser(currentUser)
@@ -89,5 +89,5 @@ export const publicRoutes = new Elysia({ prefix: '/api' })
         remainingQr: outcome.remainingQr,
       }
     },
-    { body: t.Object({ code: t.String() }) },
+    { body: t.Object({ code: t.String({ maxLength: 256 }) }) },
   )
