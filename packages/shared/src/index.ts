@@ -61,6 +61,7 @@ export interface ScanRecord {
 export interface ScanResult {
   status: 'accepted' | 'duplicate'
   label: string
+  hint: string | null
   score: number
   rank: number
   remainingQr: number

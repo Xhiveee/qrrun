@@ -295,7 +295,7 @@ export function deleteAllQrCodes(): void {
 /* ------------------------------------------------------------------ scans */
 
 export type ScanOutcome =
-  | { ok: true; duplicate: boolean; label: string; score: number; rank: number; remainingQr: number }
+  | { ok: true; duplicate: boolean; label: string; hint: string | null; score: number; rank: number; remainingQr: number }
   | { ok: false; reason: 'not_running' | 'unknown_code' | 'inactive_code' }
 
 export function registerScan(userId: number, token: string): ScanOutcome {
@@ -303,8 +303,8 @@ export function registerScan(userId: number, token: string): ScanOutcome {
   const event = readEventRow()
   if (event.status !== 'running') return { ok: false, reason: 'not_running' }
 
-  const qr = db.query('SELECT id, label, active FROM qr_codes WHERE token = ?').get(token) as
-    | { id: number; label: string; active: number }
+  const qr = db.query('SELECT id, label, hint, active FROM qr_codes WHERE token = ?').get(token) as
+    | { id: number; label: string; hint: string | null; active: number }
     | null
   if (!qr) return { ok: false, reason: 'unknown_code' }
   if (qr.active !== 1) return { ok: false, reason: 'inactive_code' }
@@ -320,6 +320,7 @@ export function registerScan(userId: number, token: string): ScanOutcome {
     ok: true,
     duplicate: inserted.changes === 0,
     label: qr.label,
+    hint: qr.hint,
     score,
     rank: getRank(userId),
     remainingQr,

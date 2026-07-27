@@ -76,6 +76,9 @@ export function Print() {
               <div className="mb-4 w-full border-b-2 border-black pb-2 text-center">
                 <div className="text-[10px] font-bold tracking-[0.34em] uppercase">QRUSH</div>
                 <div className="text-2xl font-bold tracking-[-0.03em] uppercase">{code.label}</div>
+                {code.hint ? (
+                  <div className="mt-2 text-sm font-semibold whitespace-pre-wrap">{code.hint}</div>
+                ) : null}
               </div>
 
               <div

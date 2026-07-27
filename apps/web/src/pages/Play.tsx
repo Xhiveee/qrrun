@@ -21,6 +21,11 @@ function FeedbackCard({ feedback }: { feedback: NonNullable<ReturnType<typeof us
     <div key={feedback.stamp} className={`animate-pop border-2 p-4 ${tone}`}>
       <div className="display text-2xl">{feedback.title}</div>
       <p className="mt-1.5 text-sm font-semibold">{feedback.detail}</p>
+      {feedback.hint ? (
+        <p className="text-ink-soft mt-2 border-t-2 border-dashed border-current pt-2 text-sm font-medium">
+          {feedback.hint}
+        </p>
+      ) : null}
     </div>
   )
 }

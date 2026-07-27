@@ -84,6 +84,7 @@ export const publicRoutes = new Elysia({ prefix: '/api' })
       return {
         status: outcome.duplicate ? 'duplicate' : 'accepted',
         label: outcome.label,
+        hint: outcome.hint,
         score: outcome.score,
         rank: outcome.rank,
         remainingQr: outcome.remainingQr,

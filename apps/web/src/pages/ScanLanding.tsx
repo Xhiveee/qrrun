@@ -63,6 +63,11 @@ export function ScanLanding() {
           <>
             <div className="display text-[clamp(2.2rem,9vw,3.6rem)]">{feedback.title}</div>
             <p className="mt-3 text-base font-semibold">{feedback.detail}</p>
+            {feedback.hint ? (
+              <p className="text-ink-soft mt-3 border-t-2 border-dashed border-current pt-3 text-base font-medium">
+                {feedback.hint}
+              </p>
+            ) : null}
           </>
         )}
 

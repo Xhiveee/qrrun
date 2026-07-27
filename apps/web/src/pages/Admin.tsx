@@ -297,11 +297,12 @@ export function Admin({ liveEvent }: { liveEvent: EventState | null }) {
                           void run(() => api.admin.patchQr(qr.id, { label: cause.target.value }), 'Название обновлено')
                       }}
                     />
-                    <input
+                    <textarea
                       defaultValue={qr.hint ?? ''}
                       placeholder="Подсказка"
                       maxLength={200}
-                      className="focus:border-accent min-w-0 flex-1 border-b border-transparent bg-transparent text-xs font-medium outline-none placeholder:opacity-40"
+                      rows={2}
+                      className="focus:border-accent min-w-0 flex-1 resize-y border-b border-transparent bg-transparent py-1 text-xs font-medium outline-none placeholder:opacity-40"
                       onBlur={(cause) => {
                         const next = cause.target.value
                         if (next !== (qr.hint ?? ''))

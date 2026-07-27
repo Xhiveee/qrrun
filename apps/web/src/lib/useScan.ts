@@ -7,6 +7,7 @@ export interface ScanFeedback {
   kind: 'accepted' | 'duplicate' | 'error'
   title: string
   detail: string
+  hint: string | null
   /** Меняется при каждом скане — используется как key для перезапуска анимации. */
   stamp: number
 }
@@ -32,6 +33,7 @@ export function useScan() {
             result.status === 'accepted'
               ? `Твой счёт ${result.score}, место ${result.rank}. Осталось найти ${result.remainingQr}.`
               : `Этот код у тебя уже есть. Счёт ${result.score}, место ${result.rank}.`,
+          hint: result.hint,
           stamp: Date.now(),
         })
         await refresh()
@@ -41,6 +43,7 @@ export function useScan() {
           kind: 'error',
           title: 'Не засчитано',
           detail: failure instanceof ApiError ? failure.message : 'Сеть недоступна, попробуй ещё раз',
+          hint: null,
           stamp: Date.now(),
         })
         return null
