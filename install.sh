@@ -123,11 +123,6 @@ EOF
   ok "Конфигурация записана в .env (PUBLIC_URL=$scheme://$DOMAIN)"
 }
 
-render_nginx() { # render_nginx <http|tls>
-  mkdir -p deploy/nginx/conf.d
-  sed "s/__DOMAIN__/$DOMAIN/g" "deploy/nginx/templates/$1.conf.template" > deploy/nginx/conf.d/app.conf
-}
-
 compose() { $SUDO docker compose "$@"; }
 
 # ------------------------------------------------------- 4. Предпроверка
@@ -164,7 +159,6 @@ preflight_ports() {
 # -------------------------------------------------------------- 5. Запуск
 boot() {
   preflight_ports
-  render_nginx http
   log 'Собираю образ (первый раз это займёт пару минут)…'
   compose build
   compose up -d app nginx
@@ -179,9 +173,8 @@ issue_certificate() {
       certonly --webroot -w /var/www/certbot \
       -d "$DOMAIN" --email "$LETSENCRYPT_EMAIL" \
       --agree-tos --no-eff-email --non-interactive --keep-until-expiring; then
-    render_nginx tls
     compose --profile tls up -d
-    compose exec nginx nginx -s reload
+    compose restart nginx
     ok 'HTTPS включён, автопродление настроено'
   else
     warn 'Не удалось выпустить сертификат — сайт работает по HTTP.'

@@ -19,20 +19,20 @@ services:
     networks: [qrush]
 
   nginx:
-    image: nginx:1.29-alpine
+    build:
+      context: ./deploy/nginx
+      dockerfile: Dockerfile
+    image: qrush-nginx:latest
     restart: unless-stopped
+    env_file: .env
     depends_on:
       - app
     ports:
       - '80:80'
       - '443:443'
     volumes:
-      - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
       - certbot-webroot:/var/www/certbot
       - certbot-certs:/etc/letsencrypt
-    # Периодический reload подхватывает обновлённые сертификаты.
-    command: >
-      sh -c "while :; do sleep 6h & wait $$!; nginx -s reload; done & nginx -g 'daemon off;'"
     networks: [qrush]
 
   # Автопродление сертификатов Let's Encrypt раз в 12 часов.
