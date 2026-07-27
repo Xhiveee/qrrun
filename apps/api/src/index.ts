@@ -7,11 +7,18 @@ import { addClient, broadcastAll, removeClient, startTicker } from './realtime.t
 import { adminRoutes } from './routes/admin.ts'
 import { publicRoutes } from './routes/public.ts'
 import { createUser, findUserByName, getEventState, getLeaderboard } from './store.ts'
+import { db } from './db.ts'
 
-/* Учётка администратора создаётся один раз при первом запуске. */
-if (!findUserByName(env.adminUsername)) {
+/* Учётка администратора создаётся/обновляется при каждом запуске,
+   чтобы пароль из .env всегда был актуальным. */
+const admin = findUserByName(env.adminUsername)
+if (!admin) {
   await createUser(env.adminUsername, env.adminPassword, true)
   console.log(`[qrush] создан администратор «${env.adminUsername}»`)
+} else if (!(await Bun.password.verify(env.adminPassword, admin.password_hash))) {
+  const newHash = await Bun.password.hash(env.adminPassword, { algorithm: 'argon2id' })
+  db.query('UPDATE users SET password_hash = ? WHERE username_lower = ?').run(newHash, env.adminUsername.toLowerCase())
+  console.log(`[qrush] обновлён пароль администратора «${env.adminUsername}»`)
 }
 
 async function serveSpa(pathname: string): Promise<Response> {
