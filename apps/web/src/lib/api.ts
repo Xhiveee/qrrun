@@ -73,7 +73,7 @@ export const api = {
       request<EventState>('/admin/settings', { method: 'PATCH', body: json(patch) }),
     createQr: (count: number, labelPrefix: string) =>
       request<QrCode[]>('/admin/qr', { method: 'POST', body: json({ count, labelPrefix }) }),
-    patchQr: (id: number, patch: { label?: string; active?: boolean }) =>
+    patchQr: (id: number, patch: { label?: string; hint?: string; active?: boolean }) =>
       request<QrCode[]>(`/admin/qr/${id}`, { method: 'PATCH', body: json(patch) }),
     deleteQr: (id: number) => request<QrCode[]>(`/admin/qr/${id}`, { method: 'DELETE' }),
     deleteAllQr: () => request<QrCode[]>('/admin/qr', { method: 'DELETE' }),

@@ -236,7 +236,7 @@ export function createQrCodes(count: number, labelPrefix: string): QrCode[] {
 export function listQrCodes(): QrCode[] {
   const rows = db
     .query(
-      `SELECT q.id, q.token, q.label, q.active, q.created_at,
+      `SELECT q.id, q.token, q.label, q.hint, q.active, q.created_at,
               (SELECT COUNT(*) FROM scans s WHERE s.qr_id = q.id) AS scan_count
        FROM qr_codes q
        ORDER BY q.id ASC`,
@@ -245,6 +245,7 @@ export function listQrCodes(): QrCode[] {
     id: number
     token: string
     label: string
+    hint: string | null
     active: number
     created_at: number
     scan_count: number
@@ -254,20 +255,31 @@ export function listQrCodes(): QrCode[] {
     id: r.id,
     token: r.token,
     label: r.label,
+    hint: r.hint,
     active: r.active === 1,
     createdAt: r.created_at,
     scanCount: r.scan_count,
   }))
 }
 
-export function updateQrCode(id: number, patch: { label?: string; active?: boolean }): void {
-  const current = db.query('SELECT label, active FROM qr_codes WHERE id = ?').get(id) as
-    | { label: string; active: number }
+export function updateQrCode(
+  id: number,
+  patch: { label?: string; hint?: string | null; active?: boolean },
+): void {
+  const current = db.query('SELECT label, hint, active FROM qr_codes WHERE id = ?').get(id) as
+    | { label: string; hint: string | null; active: number }
     | null
   if (!current) return
-  db.query('UPDATE qr_codes SET label = ?, active = ? WHERE id = ?').run(
-    patch.label?.trim() || current.label,
-    patch.active === undefined ? current.active : patch.active ? 1 : 0,
+
+  const label = patch.label?.trim() || current.label
+  const hint =
+    patch.hint === undefined ? current.hint : typeof patch.hint === 'string' ? patch.hint.trim() || null : null
+  const active = patch.active === undefined ? current.active : patch.active ? 1 : 0
+
+  db.query('UPDATE qr_codes SET label = ?, hint = ?, active = ? WHERE id = ?').run(
+    label,
+    hint,
+    active,
     id,
   )
 }

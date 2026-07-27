@@ -46,6 +46,7 @@ export interface QrCode {
   id: number
   token: string
   label: string
+  hint: string | null
   active: boolean
   createdAt: number
   scanCount: number

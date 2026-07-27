@@ -26,6 +26,7 @@ db.exec(`
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     token      TEXT    NOT NULL UNIQUE,
     label      TEXT    NOT NULL,
+    hint       TEXT,
     active     INTEGER NOT NULL DEFAULT 1,
     created_at INTEGER NOT NULL
   );
@@ -53,6 +54,12 @@ db.exec(`
     paused_ms       INTEGER NOT NULL DEFAULT 0
   );
 `)
+
+// Миграция: если таблица qr_codes была создана до добавления hint — дополняем столбец.
+const qrColumns = db.query('PRAGMA table_info(qr_codes)').all() as Array<{ name: string }>
+if (!qrColumns.some((col) => col.name === 'hint')) {
+  db.exec('ALTER TABLE qr_codes ADD COLUMN hint TEXT')
+}
 
 db.query(
   `INSERT OR IGNORE INTO event_state

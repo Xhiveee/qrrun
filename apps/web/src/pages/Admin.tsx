@@ -290,10 +290,22 @@ export function Admin({ liveEvent }: { liveEvent: EventState | null }) {
                     <span className="tabular text-ink-soft w-24 shrink-0 text-xs font-bold">{qr.token}</span>
                     <input
                       defaultValue={qr.label}
+                      maxLength={80}
                       className="focus:border-accent min-w-0 flex-1 border-b border-transparent bg-transparent font-semibold uppercase outline-none"
                       onBlur={(cause) => {
                         if (cause.target.value !== qr.label)
                           void run(() => api.admin.patchQr(qr.id, { label: cause.target.value }), 'Название обновлено')
+                      }}
+                    />
+                    <input
+                      defaultValue={qr.hint ?? ''}
+                      placeholder="Подсказка"
+                      maxLength={200}
+                      className="focus:border-accent min-w-0 flex-1 border-b border-transparent bg-transparent text-xs font-medium outline-none placeholder:opacity-40"
+                      onBlur={(cause) => {
+                        const next = cause.target.value
+                        if (next !== (qr.hint ?? ''))
+                          void run(() => api.admin.patchQr(qr.id, { hint: next }), 'Подсказка сохранена')
                       }}
                     />
                     <span className="tabular text-ink-soft w-10 text-right text-xs">{qr.scanCount}</span>

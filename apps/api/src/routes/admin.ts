@@ -90,6 +90,7 @@ export const adminRoutes = new Elysia({ prefix: '/api/admin' })
       params: t.Object({ id: t.Number({ minimum: 1 }) }),
       body: t.Object({
         label: t.Optional(t.String({ maxLength: 80 })),
+        hint: t.Optional(t.String({ maxLength: 200 })),
         active: t.Optional(t.Boolean()),
       }),
     },
