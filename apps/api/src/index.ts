@@ -61,7 +61,15 @@ export const app = new Elysia()
       if (message === 'ping') ws.send('pong')
     },
   })
-  .get('/*', ({ request }) => serveSpa(new URL(request.url).pathname))
+  .get('/*', ({ request, set }) => {
+    const { pathname } = new URL(request.url)
+    // Неизвестные API-маршруты должны отвечать JSON-ошибкой, а не HTML страницей SPA.
+    if (pathname.startsWith('/api/')) {
+      set.status = 404
+      return { error: 'Маршрут не найден' }
+    }
+    return serveSpa(pathname)
+  })
   .listen(env.port)
 
 startTicker()
