@@ -129,8 +129,35 @@ render_nginx() { # render_nginx <http|tls>
 
 compose() { $SUDO docker compose "$@"; }
 
-# -------------------------------------------------------------- 4. Запуск
+# ------------------------------------------------------- 4. Предпроверка
+preflight_ports() {
+  log 'Проверяю свободны ли порты 80/443…'
+  # Старые контейнеры этого проекта могут удерживать порты.
+  compose down --remove-orphans >/dev/null 2>&1 || true
+
+  local busy=''
+  busy=$(ss -tlnp 2>/dev/null | grep -E ':(80|443)\s' || true)
+  [ -n "$busy" ] || return 0
+
+  warn 'Порты 80/443 уже заняты другим процессом:'
+  printf '%s\n' "$busy"
+
+  if [ -t 0 ]; then
+    local answer=''
+    read -r -p "$(printf '%sОстановить nginx/apache2 на хосте? [y/N]:%s ' "$BOLD" "$RESET")" answer </dev/tty
+    if [ "$answer" = 'y' ] || [ "$answer" = 'Y' ]; then
+      $SUDO systemctl stop nginx apache2 >/dev/null 2>&1 || true
+      busy=$(ss -tlnp 2>/dev/null | grep -E ':(80|443)\s' || true)
+      [ -z "$busy" ] && return 0
+    fi
+  fi
+
+  die 'Освободи порты 80/443 и запусти скрипт снова (например: systemctl stop nginx apache2)'
+}
+
+# -------------------------------------------------------------- 5. Запуск
 boot() {
+  preflight_ports
   render_nginx http
   log 'Собираю образ (первый раз это займёт пару минут)…'
   compose build
