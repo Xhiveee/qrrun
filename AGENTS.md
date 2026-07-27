@@ -44,8 +44,9 @@ curl -s localhost:3000/api/event
 
 ## Деплой
 
-`install.sh` — единая точка входа: ставит Docker, пишет `.env`, рендерит nginx-конфиг из
-`deploy/nginx/templates/*.template` в `deploy/nginx/conf.d/app.conf` (файл в `.gitignore`),
-поднимает compose и выпускает сертификат Let's Encrypt.
+`install.sh` — единая точка входа: ставит Docker, пишет `.env` (обязательно `DOMAIN`),
+собирает образ `qrush-nginx` из `deploy/nginx/Dockerfile`. Конфиг nginx
+(`/etc/nginx/conf.d/app.conf`) генерируется уже внутри контейнера entrypoint'ом
+на основе `DOMAIN`/`ENABLE_TLS`.
 
 `PUBLIC_URL` попадает внутрь QR-кодов — менять его после печати нельзя.

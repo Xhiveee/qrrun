@@ -27,23 +27,22 @@
 curl -fsSL https://raw.githubusercontent.com/Xhiveee/qrrun/main/install.sh | bash
 ```
 
-Скрипт установит Docker (если его нет), склонирует репозиторий, спросит домен, email и
-пароль админа, сгенерирует `.env` с случайным `JWT_SECRET`, поднимет `docker compose`
-и выпустит сертификат Let's Encrypt с автопродлением.
+Скрипт установит Docker, склонирует репозиторий, **спросит домен или IP**, email
+для Let's Encrypt и пароль админа. Сгенерирует `.env` с `JWT_SECRET`, соберёт
+свежий образ nginx со своей конфигурацией, поднимет `docker compose` и выпустит
+сертификат с автопродлением.
 
-Неинтерактивный вариант:
+Неинтерактивный вариант (замени `event.example.com` на свой домен или IP):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Xhiveee/qrrun/main/install.sh | \
-  REPO=https://github.com/Xhiveee/qrrun.git \
   DOMAIN=event.example.com \
   LETSENCRYPT_EMAIL=me@example.com \
-  ADMIN_PASSWORD='супер-пароль' \
-  ENABLE_TLS=true bash
+  ADMIN_PASSWORD='супер-пароль' bash
 ```
 
 > Для HTTPS домен должен уже указывать A-записью на этот сервер.
-> Без домена (`DOMAIN=localhost` или IP) скрипт поднимет всё по HTTP.
+> Для IP-адреса или `localhost` сертификат не выпускается — сайт работает по HTTP.
 
 ### Обслуживание
 

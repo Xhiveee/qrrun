@@ -36,12 +36,15 @@ fi
 ask() { # ask <переменная> <вопрос> <значение по умолчанию>
   local __var=$1 __prompt=$2 __default=${3:-} __answer=''
   [ -n "${!__var}" ] && return 0
-  if [ ! -t 0 ]; then
+  # Даём вводить значения даже при curl ... | bash, если есть настоящий терминал.
+  if [ -t 1 ] && [ -e /dev/tty ]; then
+    printf '%s%s%s%s ' "$BOLD" "$__prompt" "$RESET" "${__default:+[$__default]}" > /dev/tty
+    read -r __answer </dev/tty
+    printf -v "$__var" '%s' "${__answer:-$__default}"
+  else
     [ -n "$__default" ] || die "Переменная $__var не задана, а терминал недоступен"
-    printf -v "$__var" '%s' "$__default"; return 0
+    printf -v "$__var" '%s' "$__default"
   fi
-  read -r -p "$(printf '%s%s%s%s ' "$BOLD" "$__prompt" "$RESET" "${__default:+[$__default]}")" __answer </dev/tty
-  printf -v "$__var" '%s' "${__answer:-$__default}"
 }
 
 random_secret() { head -c 48 /dev/urandom | base64 | tr -d '\n=+/' | cut -c1-48; }
@@ -80,9 +83,10 @@ fetch_sources() {
 
 # ---------------------------------------------------------------- 3. Конфиг
 write_env() {
-  ask DOMAIN 'Домен (или IP) сайта:' 'localhost'
+  ask DOMAIN 'Домен сайта (или IP для HTTP):' ''
+  [ -n "$DOMAIN" ] || die 'DOMAIN (домен или IP) обязателен'
 
-  # HTTPS имеет смысл только для настоящего домена: не для localhost и не для IP.
+  # HTTPS выпускаем только для настоящего домена: не для localhost и не для IP.
   if [ -z "$ENABLE_TLS" ]; then
     if [[ "$DOMAIN" == *.* && ! "$DOMAIN" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
       ENABLE_TLS=true
@@ -160,8 +164,11 @@ preflight_ports() {
 boot() {
   preflight_ports
   log 'Собираю образ (первый раз это займёт пару минут)…'
-  compose build
-  compose up -d app nginx
+  compose build app
+  # nginx пересобираем без кеша, чтобы точно подхватить свежие шаблоны и entrypoint.
+  compose build --no-cache nginx
+  log 'Запускаю контейнеры…'
+  compose up -d --force-recreate app nginx
   ok 'Контейнеры запущены'
 }
 
