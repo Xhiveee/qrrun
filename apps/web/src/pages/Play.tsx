@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 import { Countdown } from '../components/Countdown.tsx'
 import { Leaderboard } from '../components/Leaderboard.tsx'
 import { Scanner } from '../components/Scanner.tsx'
-import { Badge, Button, Field, Panel } from '../components/Ui.tsx'
+import { Badge, Button, Field, Notice, Panel } from '../components/Ui.tsx'
 import { useAuth } from '../lib/auth.tsx'
 import { useScan } from '../lib/useScan.ts'
 
@@ -105,6 +105,10 @@ export function Play({ event, leaderboard }: { event: EventState | null; leaderb
             </span>
             <Badge tone="accent">{EVENT_STATUS_LABEL[event.status]}</Badge>
           </div>
+        ) : null}
+
+        {event?.participationMode === 'approved' && !user.approved ? (
+          <Notice kind="info">Дождись одобрения администратора, чтобы сканировать коды.</Notice>
         ) : null}
 
         <Scanner onCode={(code) => void submit(code)} disabled={busy} />

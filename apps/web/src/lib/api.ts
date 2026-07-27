@@ -69,7 +69,7 @@ export const api = {
     overview: () => request<AdminOverview>('/admin/overview'),
     command: (command: 'start' | 'pause' | 'resume' | 'stop' | 'reset' | 'restart') =>
       request<EventState>(`/admin/event/${command}`, { method: 'POST' }),
-    settings: (patch: { name?: string; tagline?: string; durationSec?: number; targetQrCount?: number }) =>
+    settings: (patch: { name?: string; tagline?: string; durationSec?: number; targetQrCount?: number; participationMode?: 'open' | 'approved' }) =>
       request<EventState>('/admin/settings', { method: 'PATCH', body: json(patch) }),
     createQr: (count: number, labelPrefix: string) =>
       request<QrCode[]>('/admin/qr', { method: 'POST', body: json({ count, labelPrefix }) }),
@@ -78,6 +78,8 @@ export const api = {
     deleteQr: (id: number) => request<QrCode[]>(`/admin/qr/${id}`, { method: 'DELETE' }),
     deleteAllQr: () => request<QrCode[]>('/admin/qr', { method: 'DELETE' }),
     printData: () => request<PrintableQr[]>('/admin/qr/print'),
+    setUserApproved: (id: number, approved: boolean) =>
+      request<AdminOverview['users']>(`/admin/users/${id}`, { method: 'PATCH', body: json({ approved }) }),
     deleteUser: (id: number) => request<unknown>(`/admin/users/${id}`, { method: 'DELETE' }),
   },
 }

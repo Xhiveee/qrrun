@@ -9,6 +9,7 @@ import {
   findUserByName,
   getEventState,
   getLeaderboard,
+  getParticipationMode,
   getRank,
   getScans,
   getScore,
@@ -38,7 +39,8 @@ export const publicRoutes = new Elysia({ prefix: '/api' })
       if (body.password.length < 6) throw new HttpError(400, 'Пароль минимум 6 символов')
       if (findUserByName(username)) throw new HttpError(409, 'Такой ник уже занят')
 
-      const user = await createUser(username, body.password)
+      const approved = getParticipationMode() === 'open'
+      const user = await createUser(username, body.password, false, approved)
       broadcastAll()
       return { token: await jwt.sign({ sub: String(user.id) }), user: toPublicUser(user) }
     },
@@ -75,8 +77,15 @@ export const publicRoutes = new Elysia({ prefix: '/api' })
           not_running: 'Ивент сейчас не идёт — скан не засчитан',
           unknown_code: 'Такого кода не существует',
           inactive_code: 'Этот код отключён администратором',
+          not_approved: 'Тебя ещё не одобрили — дождись администратора',
         } as const
-        throw new HttpError(outcome.reason === 'not_running' ? 409 : 404, messages[outcome.reason])
+        const statusMap = {
+          not_running: 409,
+          unknown_code: 404,
+          inactive_code: 404,
+          not_approved: 403,
+        } as const
+        throw new HttpError(statusMap[outcome.reason], messages[outcome.reason])
       }
 
       if (!outcome.duplicate) broadcastAll()

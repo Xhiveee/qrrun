@@ -15,6 +15,7 @@ interface EventRow {
   status: EventStatus
   duration_sec: number
   target_qr_count: number
+  participation_mode: 'open' | 'approved'
   started_at: number | null
   paused_at: number | null
   paused_ms: number
@@ -25,12 +26,15 @@ interface UserRow {
   username: string
   password_hash: string
   is_admin: number
+  approved: number
   created_at: number
 }
 
 const selectEvent = db.query('SELECT * FROM event_state WHERE id = 1')
 const countActiveQr = db.query('SELECT COUNT(*) AS n FROM qr_codes WHERE active = 1')
-const countUsers = db.query('SELECT COUNT(*) AS n FROM users WHERE is_admin = 0')
+const countParticipants = db.query(
+  "SELECT COUNT(*) AS n FROM users WHERE is_admin = 0 AND (? = 'open' OR approved = 1)",
+)
 const countScans = db.query('SELECT COUNT(*) AS n FROM scans')
 
 const scalar = (row: unknown) => (row as { n: number } | null)?.n ?? 0
@@ -61,11 +65,12 @@ export function getEventState(now = Date.now()): EventState {
     durationSec: row.duration_sec,
     targetQrCount: row.target_qr_count,
     activeQrCount: scalar(countActiveQr.get()),
+    participationMode: row.participation_mode,
     startedAt: row.started_at,
     endsAt: row.status === 'running' && row.started_at ? row.started_at + row.paused_ms + totalMs : null,
     remainingMs,
     serverTime: now,
-    participantCount: scalar(countUsers.get()),
+    participantCount: scalar(countParticipants.get(row.participation_mode)),
     totalScans: scalar(countScans.get()),
   }
 }
@@ -136,17 +141,20 @@ export interface EventSettingsPatch {
   tagline?: string
   durationSec?: number
   targetQrCount?: number
+  participationMode?: 'open' | 'approved'
 }
 
 export function updateEventSettings(patch: EventSettingsPatch): EventState {
   const row = readEventRow()
+  const mode = patch.participationMode ?? row.participation_mode
   db.query(
-    'UPDATE event_state SET name = ?, tagline = ?, duration_sec = ?, target_qr_count = ? WHERE id = 1',
+    'UPDATE event_state SET name = ?, tagline = ?, duration_sec = ?, target_qr_count = ?, participation_mode = ? WHERE id = 1',
   ).run(
     patch.name?.trim() || row.name,
     patch.tagline?.trim() ?? row.tagline,
     Math.max(30, Math.min(999 * 3600, Math.round(patch.durationSec ?? row.duration_sec))),
     Math.max(1, Math.min(2000, Math.round(patch.targetQrCount ?? row.target_qr_count))),
+    mode,
   )
   return getEventState()
 }
@@ -154,7 +162,7 @@ export function updateEventSettings(patch: EventSettingsPatch): EventState {
 /* ------------------------------------------------------------------- users */
 
 export function toPublicUser(row: UserRow): PublicUser {
-  return { id: row.id, username: row.username, isAdmin: row.is_admin === 1 }
+  return { id: row.id, username: row.username, isAdmin: row.is_admin === 1, approved: row.approved === 1 }
 }
 
 export function findUserByName(username: string): UserRow | null {
@@ -167,14 +175,19 @@ export function findUserById(id: number): UserRow | null {
   return db.query('SELECT * FROM users WHERE id = ?').get(id) as UserRow | null
 }
 
-export async function createUser(username: string, password: string, isAdmin = false): Promise<UserRow> {
+export async function createUser(
+  username: string,
+  password: string,
+  isAdmin = false,
+  approved = true,
+): Promise<UserRow> {
   const clean = username.trim()
   const hash = await Bun.password.hash(password, { algorithm: 'argon2id' })
   const { lastInsertRowid } = db
     .query(
-      'INSERT INTO users (username, username_lower, password_hash, is_admin, created_at) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO users (username, username_lower, password_hash, is_admin, approved, created_at) VALUES (?, ?, ?, ?, ?, ?)',
     )
-    .run(clean, clean.toLowerCase(), hash, isAdmin ? 1 : 0, Date.now())
+    .run(clean, clean.toLowerCase(), hash, isAdmin ? 1 : 0, approved ? 1 : 0, Date.now())
   return findUserById(Number(lastInsertRowid))!
 }
 
@@ -185,20 +198,29 @@ export function deleteUser(id: number): void {
 export function listUsers(): Array<PublicUser & { score: number; createdAt: number }> {
   const rows = db
     .query(
-      `SELECT u.id, u.username, u.is_admin, u.created_at,
+      `SELECT u.id, u.username, u.is_admin, u.approved, u.created_at,
               (SELECT COUNT(*) FROM scans s WHERE s.user_id = u.id) AS score
        FROM users u
        ORDER BY u.created_at DESC`,
     )
-    .all() as Array<{ id: number; username: string; is_admin: number; created_at: number; score: number }>
+    .all() as Array<{ id: number; username: string; is_admin: number; approved: number; created_at: number; score: number }>
 
   return rows.map((r) => ({
     id: r.id,
     username: r.username,
     isAdmin: r.is_admin === 1,
+    approved: r.approved === 1,
     score: r.score,
     createdAt: r.created_at,
   }))
+}
+
+export function getParticipationMode(): 'open' | 'approved' {
+  return readEventRow().participation_mode
+}
+
+export function setUserApproved(id: number, approved: boolean): void {
+  db.query('UPDATE users SET approved = ? WHERE id = ? AND is_admin = 0').run(approved ? 1 : 0, id)
 }
 
 /* --------------------------------------------------------------- qr codes */
@@ -296,12 +318,17 @@ export function deleteAllQrCodes(): void {
 
 export type ScanOutcome =
   | { ok: true; duplicate: boolean; label: string; hint: string | null; score: number; rank: number; remainingQr: number }
-  | { ok: false; reason: 'not_running' | 'unknown_code' | 'inactive_code' }
+  | { ok: false; reason: 'not_running' | 'unknown_code' | 'inactive_code' | 'not_approved' }
 
 export function registerScan(userId: number, token: string): ScanOutcome {
   expireEventIfNeeded()
   const event = readEventRow()
   if (event.status !== 'running') return { ok: false, reason: 'not_running' }
+
+  const user = findUserById(userId)
+  if (!user) return { ok: false, reason: 'not_approved' }
+  if (event.participation_mode === 'approved' && !user.is_admin && !user.approved)
+    return { ok: false, reason: 'not_approved' }
 
   const qr = db.query('SELECT id, label, hint, active FROM qr_codes WHERE token = ?').get(token) as
     | { id: number; label: string; hint: string | null; active: number }
@@ -344,6 +371,7 @@ export function getScans(userId: number): ScanRecord[] {
 }
 
 export function getLeaderboard(limit = 100): LeaderboardRow[] {
+  const mode = readEventRow().participation_mode
   const rows = db
     .query(
       `SELECT u.id, u.username,
@@ -351,13 +379,13 @@ export function getLeaderboard(limit = 100): LeaderboardRow[] {
               MAX(s.created_at) AS last_scan_at
        FROM users u
        LEFT JOIN scans s ON s.user_id = u.id
-       WHERE u.is_admin = 0
+       WHERE u.is_admin = 0 AND (? = 'open' OR u.approved = 1)
        GROUP BY u.id
        HAVING score > 0
        ORDER BY score DESC, last_scan_at ASC
        LIMIT ?`,
     )
-    .all(limit) as Array<{ id: number; username: string; score: number; last_scan_at: number | null }>
+    .all(mode, limit) as Array<{ id: number; username: string; score: number; last_scan_at: number | null }>
 
   return rows.map((r, index) => ({
     rank: index + 1,

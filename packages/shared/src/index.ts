@@ -10,6 +10,8 @@ export interface EventState {
   targetQrCount: number
   /** Сколько активных QR-кодов реально создано. */
   activeQrCount: number
+  /** Режим участия: open — все, approved — только одобренные админом. */
+  participationMode: 'open' | 'approved'
   /** Unix ms момента старта, null если ивент ещё не стартовал. */
   startedAt: number | null
   /** Unix ms расчётного окончания с учётом пауз, null если не запущен. */
@@ -35,6 +37,8 @@ export interface PublicUser {
   id: number
   username: string
   isAdmin: boolean
+  /** Может ли участвовать в одобрительном режиме. */
+  approved: boolean
 }
 
 export interface AuthResponse {

@@ -48,7 +48,13 @@ export function Admin({ liveEvent }: { liveEvent: EventState | null }) {
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const [form, setForm] = useState({ name: '', tagline: '', hours: 1, targetQrCount: 20 })
+  const [form, setForm] = useState({
+    name: '',
+    tagline: '',
+    hours: 1,
+    targetQrCount: 20,
+    participationMode: 'open' as 'open' | 'approved',
+  })
   const [qrForm, setQrForm] = useState({ count: 10, labelPrefix: 'ТОЧКА' })
 
   const load = useCallback(async () => {
@@ -63,6 +69,7 @@ export function Admin({ liveEvent }: { liveEvent: EventState | null }) {
               tagline: overview.event.tagline,
               hours: Math.round(overview.event.durationSec / 3600),
               targetQrCount: overview.event.targetQrCount,
+              participationMode: overview.event.participationMode,
             },
       )
     } catch (failure) {
@@ -119,6 +126,7 @@ export function Admin({ liveEvent }: { liveEvent: EventState | null }) {
           tagline: form.tagline,
           durationSec: Math.round(form.hours * 3600),
           targetQrCount: form.targetQrCount,
+          participationMode: form.participationMode,
         }),
       'Настройки сохранены',
     )
@@ -228,6 +236,21 @@ export function Admin({ liveEvent }: { liveEvent: EventState | null }) {
                 hint={`создано активных: ${event.activeQrCount}`}
                 onChange={(cause) => setForm({ ...form, targetQrCount: Number(cause.target.value) })}
               />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-ink-soft text-[11px] font-bold tracking-[0.22em] uppercase">
+                Режим участия
+              </span>
+              <select
+                value={form.participationMode}
+                onChange={(cause) =>
+                  setForm({ ...form, participationMode: cause.target.value as 'open' | 'approved' })
+                }
+                className="rule bg-paper focus:border-accent w-full cursor-pointer px-4 py-3 text-base outline-none"
+              >
+                <option value="open">Открытое — все зарегистрированные</option>
+                <option value="approved">По одобрению администратора</option>
+              </select>
             </div>
             <Button type="submit" disabled={busy}>
               Сохранить
@@ -346,6 +369,22 @@ export function Admin({ liveEvent }: { liveEvent: EventState | null }) {
                 >
                   <span className="flex-1 truncate font-bold uppercase">{participant.username}</span>
                   {participant.isAdmin ? <Badge tone="ink">админ</Badge> : null}
+                  {!participant.isAdmin && event.participationMode === 'approved' ? (
+                    <button
+                      className="cursor-pointer px-1 text-[10px] font-bold tracking-[0.14em] uppercase"
+                      title={participant.approved ? 'Отозвать участие' : 'Одобрить участие'}
+                      onClick={() =>
+                        void run(
+                          () => api.admin.setUserApproved(participant.id, !participant.approved),
+                          participant.approved ? 'Участие отозвано' : 'Участник одобрен',
+                        )
+                      }
+                    >
+                      <Badge tone={participant.approved ? 'accent' : 'mute'}>
+                        {participant.approved ? 'Участвует' : 'Одобрить'}
+                      </Badge>
+                    </button>
+                  ) : null}
                   <span className="tabular w-10 text-right font-bold">{participant.score}</span>
                   {!participant.isAdmin ? (
                     <button
