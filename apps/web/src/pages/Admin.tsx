@@ -215,7 +215,7 @@ export function Admin({ liveEvent }: { liveEvent: EventState | null }) {
                 label="Длительность, ч"
                 type="number"
                 min={1}
-                max={24}
+                max={999}
                 value={form.hours}
                 onChange={(cause) => setForm({ ...form, hours: Number(cause.target.value) })}
               />

@@ -64,7 +64,7 @@ export const adminRoutes = new Elysia({ prefix: '/api/admin' })
       body: t.Object({
         name: t.Optional(t.String({ maxLength: 40 })),
         tagline: t.Optional(t.String({ maxLength: 60 })),
-        durationSec: t.Optional(t.Number({ minimum: 30, maximum: 24 * 3600 })),
+        durationSec: t.Optional(t.Number({ minimum: 30, maximum: 999 * 3600 })),
         targetQrCount: t.Optional(t.Number({ minimum: 1, maximum: 2000 })),
       }),
     },

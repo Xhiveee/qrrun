@@ -145,7 +145,7 @@ export function updateEventSettings(patch: EventSettingsPatch): EventState {
   ).run(
     patch.name?.trim() || row.name,
     patch.tagline?.trim() ?? row.tagline,
-    Math.max(30, Math.min(24 * 3600, Math.round(patch.durationSec ?? row.duration_sec))),
+    Math.max(30, Math.min(999 * 3600, Math.round(patch.durationSec ?? row.duration_sec))),
     Math.max(1, Math.min(2000, Math.round(patch.targetQrCount ?? row.target_qr_count))),
   )
   return getEventState()
