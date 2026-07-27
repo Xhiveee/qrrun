@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1
-
 ############################  зависимости  ############################
 FROM oven/bun:1.3.14-slim AS deps
 WORKDIR /app
