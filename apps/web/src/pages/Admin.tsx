@@ -48,7 +48,7 @@ export function Admin({ liveEvent }: { liveEvent: EventState | null }) {
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const [form, setForm] = useState({ name: '', tagline: '', minutes: 60, targetQrCount: 20 })
+  const [form, setForm] = useState({ name: '', tagline: '', hours: 1, targetQrCount: 20 })
   const [qrForm, setQrForm] = useState({ count: 10, labelPrefix: 'ТОЧКА' })
 
   const load = useCallback(async () => {
@@ -61,7 +61,7 @@ export function Admin({ liveEvent }: { liveEvent: EventState | null }) {
           : {
               name: overview.event.name,
               tagline: overview.event.tagline,
-              minutes: Math.round(overview.event.durationSec / 60),
+              hours: Math.round(overview.event.durationSec / 3600),
               targetQrCount: overview.event.targetQrCount,
             },
       )
@@ -117,7 +117,7 @@ export function Admin({ liveEvent }: { liveEvent: EventState | null }) {
         api.admin.settings({
           name: form.name,
           tagline: form.tagline,
-          durationSec: Math.round(form.minutes * 60),
+          durationSec: Math.round(form.hours * 3600),
           targetQrCount: form.targetQrCount,
         }),
       'Настройки сохранены',
@@ -212,12 +212,12 @@ export function Admin({ liveEvent }: { liveEvent: EventState | null }) {
             />
             <div className="grid grid-cols-2 gap-4">
               <Field
-                label="Длительность, мин"
+                label="Длительность, ч"
                 type="number"
                 min={1}
-                max={1440}
-                value={form.minutes}
-                onChange={(cause) => setForm({ ...form, minutes: Number(cause.target.value) })}
+                max={24}
+                value={form.hours}
+                onChange={(cause) => setForm({ ...form, hours: Number(cause.target.value) })}
               />
               <Field
                 label="Кодов на площадке"

@@ -108,7 +108,7 @@ export function Home({ event, leaderboard }: { event: EventState | null; leaderb
         <div className="grid content-start gap-4">
           <Stat value={found} label="лучший результат" accent />
           <Stat value={collected} label="кодов на площадке" />
-          <Stat value={Math.round(event.durationSec / 60)} label="минут на всё" />
+          <Stat value={Math.round(event.durationSec / 3600)} label="часов на всё" />
         </div>
       </section>
     </div>
