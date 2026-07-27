@@ -26,6 +26,7 @@ LETSENCRYPT_EMAIL="${LETSENCRYPT_EMAIL:-}"
 ADMIN_USERNAME="${ADMIN_USERNAME:-admin}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
 ENABLE_TLS="${ENABLE_TLS:-}"
+FORCE_FREE_PORTS="${FORCE_FREE_PORTS:-}"
 
 SUDO=''
 if [ "$(id -u)" -ne 0 ]; then
@@ -150,9 +151,14 @@ preflight_ports() {
       busy=$(ss -tlnp 2>/dev/null | grep -E ':(80|443)\s' || true)
       [ -z "$busy" ] && return 0
     fi
+  elif [ "$FORCE_FREE_PORTS" = 'true' ]; then
+    warn 'FORCE_FREE_PORTS=true — останавливаю nginx/apache2 на хосте…'
+    $SUDO systemctl stop nginx apache2 >/dev/null 2>&1 || true
+    busy=$(ss -tlnp 2>/dev/null | grep -E ':(80|443)\s' || true)
+    [ -z "$busy" ] && return 0
   fi
 
-  die 'Освободи порты 80/443 и запусти скрипт снова (например: systemctl stop nginx apache2)'
+  die 'Освободи порты 80/443 и запусти скрипт снова (например: systemctl stop nginx apache2, или используй FORCE_FREE_PORTS=true)'
 }
 
 # -------------------------------------------------------------- 5. Запуск
