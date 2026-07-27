@@ -1,0 +1,57 @@
+name: qrush
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: qrush-app:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_PATH: /data/qrush.sqlite
+    volumes:
+      - qrush-data:/data
+    expose:
+      - '3000'
+    networks: [qrush]
+
+  nginx:
+    image: nginx:1.29-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+      - certbot-webroot:/var/www/certbot
+      - certbot-certs:/etc/letsencrypt
+    # Периодический reload подхватывает обновлённые сертификаты.
+    command: >
+      sh -c "while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g 'daemon off;'"
+    networks: [qrush]
+
+  # Автопродление сертификатов Let's Encrypt раз в 12 часов.
+  certbot:
+    image: certbot/certbot:latest
+    restart: unless-stopped
+    profiles: [tls]
+    volumes:
+      - certbot-webroot:/var/www/certbot
+      - certbot-certs:/etc/letsencrypt
+    entrypoint: >
+      sh -c "trap exit TERM;
+      while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done"
+    networks: [qrush]
+
+volumes:
+  qrush-data:
+  certbot-webroot:
+  certbot-certs:
+
+networks:
+  qrush:

@@ -1,0 +1,24 @@
+{
+  "name": "@qrush/api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "build": "echo \"@qrush/api runs directly on Bun\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@elysiajs/cors": "1.4.0",
+    "@elysiajs/jwt": "1.4.0",
+    "@qrush/shared": "workspace:*",
+    "elysia": "1.4.9",
+    "qrcode": "1.5.4"
+  },
+  "devDependencies": {
+    "@types/bun": "1.2.21",
+    "@types/qrcode": "1.5.5",
+    "typescript": "5.9.2"
+  }
+}

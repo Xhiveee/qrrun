@@ -1,0 +1,13 @@
+node_modules
+**/node_modules
+.turbo
+**/.turbo
+apps/web/dist
+data
+.git
+.github
+*.log
+.env
+.env.local
+deploy/certbot
+README.md

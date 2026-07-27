@@ -1,0 +1,8 @@
+# Всегда LF: скрипты и конфиги выполняются в Linux-контейнерах.
+* text=auto eol=lf
+
+*.sh            text eol=lf
+*.template      text eol=lf
+*.conf          text eol=lf
+Dockerfile      text eol=lf
+bun.lock        text eol=lf
